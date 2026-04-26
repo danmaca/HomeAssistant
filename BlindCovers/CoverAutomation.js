@@ -64,7 +64,7 @@ const CONFIG = {
   // Azimut okna ve stupních od severu (po směru hodinových ručiček)
   // Window azimuth in degrees from North (clockwise)
   // 0=Sever/North, 90=Východ/East, 180=Jih/South, 270=Západ/West
-  WINDOW_AZIMUTH: 90, // Východní okno / East-facing window
+  WINDOW_AZIMUTH: 230, // Východní okno / East-facing window
 
   // Poloviční zorné pole okna ve stupních
   // Half-angle field of view of the window in degrees
@@ -376,6 +376,33 @@ if (
     `CoverAutomation: Teplotní senzor '${CONFIG.TEMP_SENSOR}' nenalezen nebo nedostupný ` +
       `/ Temperature sensor not found or unavailable – continuing without temp adjustments`,
   );
+}
+
+// --- 1b. Kontrola pozice žaluzií / Check blind position ---
+// Pokud jsou žaluzie vytažené nahoru o více než 50 %, nemá smysl měnit náklon lamel.
+// If the blinds are raised more than 50%, there is no point in changing the tilt.
+const blindEntity = haStates[CONFIG.BLIND_ENTITY];
+if (
+  blindEntity &&
+  blindEntity.attributes &&
+  blindEntity.attributes.current_position !== undefined
+) {
+  const currentPosition = parseFloat(blindEntity.attributes.current_position);
+  if (!isNaN(currentPosition) && currentPosition > 50) {
+    const statusText =
+      `Žaluzie vytaženy (${currentPosition}% > 50%) – náklon se nemění | ` +
+      `Blinds raised – tilt not changed`;
+    node.status({
+      fill: "blue",
+      shape: "ring",
+      text: statusText,
+    });
+    node.warn(
+      `CoverAutomation: Žaluzie '${CONFIG.BLIND_ENTITY}' jsou vytaženy na ${currentPosition}% (> 50%) ` +
+        `– náklon se nemění / Blinds raised above 50% – skipping tilt adjustment`,
+    );
+    return null;
+  }
 }
 
 // --- 2. Kontrola, zda je slunce relevantní / Check if sun is relevant ---
