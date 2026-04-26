@@ -1,0 +1,22 @@
+substitutions:
+  device_name: kitchendesk-wallsocket-left
+  friendly_name: Kuchyňská linka zásuvka levá
+  power_update_interval: 10s
+
+packages:
+  base: !include .base.yaml
+  shelly25: !include .shelly25.yaml
+
+switch:
+  - id: relay_1
+    name: ${device_name} Relay 1
+    platform: gpio
+    pin: GPIO4
+    icon: "mdi:power-socket-fr"
+    restore_mode: RESTORE_DEFAULT_OFF
+  - id: relay_2
+    name: ${device_name} Relay 2
+    platform: gpio
+    pin: GPIO15
+    icon: "mdi:power-socket-fr"
+    restore_mode: RESTORE_DEFAULT_OFF

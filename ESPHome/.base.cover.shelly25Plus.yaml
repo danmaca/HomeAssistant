@@ -1,0 +1,75 @@
+packages:
+  base: !include .base.cover.yaml
+  
+substitutions:
+  gpio_buttonKeyUp: GPIO5
+  gpio_buttonKeyDown: GPIO18
+  gpio_relayUp: GPIO13
+  gpio_relayDown: GPIO12
+    
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: arduino
+  
+# Send WiFi signal strength & uptime to HA
+sensor:
+  - platform: ade7953_i2c
+    irq_pin: GPIO27 # Prevent overheating by setting this
+    update_interval: 60s
+    # On the Shelly 2.5 channels are mixed ch1=B ch2=A
+    active_power_a:
+      name: ${device_name} Active Power A
+      id: power_channel_2
+      entity_category: 'diagnostic'
+      internal: true
+      filters:
+        - multiply: -1
+    active_power_b:
+      name: ${device_name} Active Power B
+      id: power_channel_1
+      entity_category: 'diagnostic'
+      internal: true
+  - platform: total_daily_energy
+    name: ${device_name} Relay Up energy
+    power_id: power_channel_1
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+  - platform: total_daily_energy
+    name: ${device_name} Relay Down energy
+    power_id: power_channel_2
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+    
+  # NTC Temperature
+  - platform: ntc
+    sensor: temp_resistance_reading
+    name: ${device_name} Temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    icon: "mdi:thermometer"
+    entity_category: 'diagnostic'
+    calibration:
+      b_constant: 3350
+      reference_resistance: 4.7kOhm
+      reference_temperature: 298.15K
+  - platform: resistance
+    id: temp_resistance_reading
+    sensor: temp_analog_reading
+    configuration: DOWNSTREAM
+    resistor: 5.6kOhm
+  - platform: adc
+    id: temp_analog_reading
+    pin: GPIO35
+    attenuation: 11db
+    
+status_led:
+  pin:
+    number: GPIO0
+    inverted: yes
+
+i2c:
+  sda: GPIO26
+  scl: GPIO25

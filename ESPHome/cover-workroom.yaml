@@ -1,0 +1,6 @@
+substitutions:
+  device_name: "cover-workroom"
+  friendly_name: "Cover work room"
+
+packages:
+  base_cover_shelly25_short: !include .base.cover.shelly25.short.yaml

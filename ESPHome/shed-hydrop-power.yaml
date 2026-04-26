@@ -1,0 +1,133 @@
+substitutions:
+  device_name: "shed-hydrop-power"
+  friendly_name: "Shed hydroponics power"
+
+packages:
+  base: !include .base.yaml
+
+esp8266:
+  board: esp01_1m
+  restore_from_flash: true
+
+preferences:
+  flash_write_interval: 0s
+
+esphome:
+  on_boot:
+    priority: -100
+    then:
+      - select.set:
+          id: cycle_mode
+          option: !lambda |-
+            if (id(saved_mode) == 1) return std::string("standard");
+            if (id(saved_mode) == 2) return std::string("intensive");
+            return std::string("off");
+
+output:
+  - platform: gpio
+    id: relay_output
+    pin: GPIO4
+
+switch:
+  - platform: output
+    id: relay
+    name: Relay
+    output: relay_output
+    restore_mode: ALWAYS_OFF
+
+one_wire:
+  - platform: gpio
+    pin: GPIO3
+    
+sensor:
+  - platform: dallas_temp
+    id: temp
+    name: Temp
+   # address: 0xf9f848811e64ff28
+    address: 0x59c15f811e64ff28
+    accuracy_decimals: 4
+    update_interval: 60s
+
+#  - platform: dallas_temp
+#    name: ${friendly_name} Temp Outside
+#    address: 0x59c15f811e64ff28
+#    accuracy_decimals: 4
+#    update_interval: 60s
+
+globals:
+  - id: saved_mode
+    type: int
+    restore_value: true
+    initial_value: '1'
+  - id: on_time
+    type: int
+    initial_value: '900000'
+  - id: off_time
+    type: int
+    initial_value: '2700000'
+
+select:
+  - platform: template
+    id: cycle_mode
+    name: cyclemode
+    options:
+      - "off"
+      - "standard"
+      - "intensive"
+    initial_option: "off"
+    optimistic: true
+    set_action:
+      - script.stop: cycle_relay
+      - switch.turn_off: relay
+      - if:
+          condition:
+            lambda: 'return x == "off";'
+          then:
+            - globals.set:
+                id: saved_mode
+                value: '0'
+      - if:
+          condition:
+            lambda: 'return x == "standard";'
+          then:
+            - globals.set:
+                id: saved_mode
+                value: '1'
+            - globals.set:
+                id: on_time
+                value: '900000'
+            - globals.set:
+                id: off_time
+                value: '2700000'
+      - if:
+          condition:
+            lambda: 'return x == "intensive";'
+          then:
+            - globals.set:
+                id: saved_mode
+                value: '2'
+            - globals.set:
+                id: on_time
+                value: '1800000'
+            - globals.set:
+                id: off_time
+                value: '1800000'
+      - lambda: 'global_preferences->sync();'
+      - if:
+          condition:
+            lambda: 'return x != "off";'
+          then:
+            - script.execute: cycle_relay
+
+script:
+  - id: cycle_relay
+    mode: restart
+    then:
+      - while:
+          condition:
+            lambda: 'return id(saved_mode) != 0;'
+          then:
+            - switch.turn_on: relay
+            - delay: !lambda 'return id(on_time);'
+            - switch.turn_off: relay
+            - delay: !lambda 'return id(off_time);'

@@ -1,0 +1,33 @@
+substitutions:
+  device_name: garage-controller
+  friendly_name: Garage controller
+
+packages:
+  base: !include .base.yaml
+
+esphome:
+  name: ${device_name}
+esp8266:
+  board: esp01_1m
+
+sensor:
+  - platform: dht
+    pin: GPIO4
+    temperature:
+      name: ${device_name} Temperature
+      accuracy_decimals: 2
+    humidity:
+      name: ${device_name} Humidity
+    update_interval: 60s
+
+binary_sensor:
+  - platform: gpio
+    name: ${device_name} Door Contact
+    device_class: door
+    pin:
+      number: GPIO14
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on_off: 100ms

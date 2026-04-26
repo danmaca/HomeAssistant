@@ -1,0 +1,124 @@
+packages:
+  base: !include .base.yaml
+
+substitutions:
+  device_name: workroom-desk-positioning
+  friendly_name: Workroom desk positioning
+
+esp8266:
+  board: esp01_1m
+
+cover:
+  - id: shutter
+    name: ${device_name} Shutter
+    platform: time_based
+    open_duration: 18200ms
+    close_duration: 16500ms
+    open_action:
+      - switch.turn_on: relayUp
+      - text_sensor.template.publish:
+          id: shutterMovement
+          state: !lambda 'return "up";'
+    close_action:
+      - switch.turn_on: relayDown
+      - text_sensor.template.publish:
+          id: shutterMovement
+          state: !lambda 'return "down";'
+    stop_action:
+      - switch.turn_off: relayUp
+      - switch.turn_off: relayDown
+      - text_sensor.template.publish:
+          id: shutterMovement
+          state: !lambda 'return "idle";'
+ 
+binary_sensor:
+  - id: buttonKeyUp
+    pin: GPIO13
+    platform: gpio
+    internal: true
+    filters:
+      - delayed_on_off: 30ms
+      - invert:
+    on_multi_click:
+    - timing:
+        - ON for 15ms to 800ms
+        - OFF for at least 300ms
+      then:
+        - if:
+            condition:
+              - switch.is_on: relayUp
+            then:
+              - cover.stop: shutter
+            else:
+              - cover.control:
+                  id: shutter
+                  position: 87%
+    - timing:
+        - ON for at least 900ms
+      then:
+        - if:
+            condition:
+              - switch.is_off: relayUp
+            then:
+              - cover.open: shutter
+    - timing:
+        - ON for at least 900ms
+        - OFF for at least 100ms
+      then:
+        - cover.stop: shutter
+
+  - id: buttonKeyDown
+    pin: GPIO12
+    platform: gpio
+    internal: true
+    filters:
+      - delayed_on_off: 5ms
+      - invert:
+    on_multi_click:
+    - timing:
+        - ON for 15ms to 800ms
+        - OFF for at least 300ms
+      then:
+        - if:
+            condition:
+              - switch.is_on: relayDown
+            then:
+              - cover.stop: shutter
+            else:
+              - cover.control:
+                  id: shutter
+                  position: 11%
+    - timing:
+        - ON for at least 900ms
+      then:
+        - if:
+            condition:
+              - switch.is_off: relayDown
+            then:
+              - cover.close: shutter
+    - timing:
+        - ON for at least 900ms
+        - OFF for at least 100ms
+      then:
+        - cover.stop: shutter
+            
+
+switch:
+  - id: relayUp
+    platform: gpio
+    pin: GPIO15
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_OFF
+    interlock: [relayDown]
+  - id: relayDown
+    platform: gpio
+    pin: GPIO04
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_OFF
+    interlock: [relayUp]
+
+text_sensor:
+  - id: shutterMovement
+    name: ${device_name} Movement
+    platform: template
+    #lambda: return {"idle"};

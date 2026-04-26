@@ -1,0 +1,38 @@
+substitutions:
+  device_name: "Shelly1Plus"
+  friendly_name: "Shelly1Plus"
+
+esphome:
+  name: shelly-1-plus
+  platformio_options:
+    board_build.f_cpu: 160000000L
+
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_FREERTOS_UNICORE: y
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_160: y
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ: "160"
+
+wifi:
+  ssid: !secret wifi_iot_ssid
+  password: !secret wifi_iot_password
+  
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${friendly_name} AP
+    password: !secret esphome_fallback_ap_password
+
+web_server:
+  port: 80
+logger:
+ota:
+api:
+captive_portal:
+
+status_led:
+  pin:
+    number: GPIO0
+    inverted: true

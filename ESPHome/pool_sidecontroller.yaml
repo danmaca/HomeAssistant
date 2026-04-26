@@ -1,0 +1,30 @@
+substitutions:
+  device_name: "pool-sidecontroller"
+  friendly_name: "Pool sidecontroller"
+
+packages:
+  base: !include .base.yaml
+
+esp8266:
+  board: esp07
+
+wifi:
+  manual_ip:
+    static_ip: 192.168.10.143
+    gateway: 192.168.10.1
+    subnet: 255.255.255.0
+
+one_wire:
+  - platform: gpio
+    pin: GPIO14
+
+sensor:
+  - platform: dallas_temp
+    name: ${friendly_name} Water Temp
+    address: 0x1700000f9d90d328
+    accuracy_decimals: 4
+    update_interval: 180s
+    filters:
+      - lambda: !lambda |-
+          if (x > 38) return {};
+          return x;

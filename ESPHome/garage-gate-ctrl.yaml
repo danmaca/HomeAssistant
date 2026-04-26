@@ -1,0 +1,51 @@
+substitutions:
+  device_name: "garage-gate-ctrl"
+  friendly_name: "Garážová vrata ovládání"
+
+packages:
+  base: !include .base.yaml
+
+esphome:
+  name: ${device_name}
+esp8266:
+  board: esp01_1m
+
+binary_sensor:
+  - platform: gpio
+    name: ${device_name} Contact
+    id: contact_sensor
+    device_class: garage_door
+    pin: GPIO5
+    filters:
+      - invert
+      - delayed_on_off: 200ms
+
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode:
+        input: true
+        pullup: true
+    name: ${device_name} Motion
+    device_class: motion
+    filters:
+      - delayed_on_off: 30ms
+
+switch:
+  - platform: gpio
+    pin: GPIO4
+    name: ${device_name} Relay
+    id: relay
+    internal: true
+    on_turn_on:
+    - delay: 0.5s
+    - switch.turn_off: relay
+
+button:
+  - platform: template
+    name: ${device_name} Button
+    on_press:
+      then:
+        - switch.turn_on: relay
+        - delay: 0.5s
+        - switch.turn_off: relay

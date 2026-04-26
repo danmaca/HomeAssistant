@@ -1,0 +1,7 @@
+substitutions:
+  open_duration: 40880ms
+  close_duration: 40170ms
+  motor_warmup_delay: 180ms
+  
+packages:
+  base_cover_shelly25: !include .base.cover.shelly25.yaml

@@ -1,0 +1,6 @@
+substitutions:
+  device_name: "cover-childrenroom-right"
+  friendly_name: "Cover children room right"
+
+packages:
+  base_cover_shelly25_long: !include .base.cover.shelly25.long.yaml

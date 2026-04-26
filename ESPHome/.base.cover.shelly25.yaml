@@ -1,0 +1,9 @@
+packages:
+  base_cover: !include .base.cover.yaml
+  shelly25: !include .shelly25.yaml
+  
+substitutions:
+  gpio_buttonKeyUp: GPIO13
+  gpio_buttonKeyDown: GPIO5
+  gpio_relayUp: GPIO4
+  gpio_relayDown: GPIO15

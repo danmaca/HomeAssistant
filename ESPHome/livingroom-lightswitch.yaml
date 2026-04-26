@@ -1,0 +1,156 @@
+substitutions:
+  device_name: livingroom-lightswitch
+  friendly_name: "Vypínač světla obývák"
+
+packages:
+  base: !include .base.yaml
+  shelly25gen4: !include .shelly25gen4.yaml
+
+output:
+  - platform: gpio
+    id: relay_output_1
+    pin: GPIO5
+  - platform: gpio
+    id: relay_output_2
+    pin: GPIO3
+
+switch:
+  - platform: output
+    id: relay1
+    name: ${device_name} Relay 1
+    output: relay_output_1
+    icon: mdi:electric-switch
+    restore_mode: RESTORE_DEFAULT_OFF
+    on_turn_on:
+      - then:
+        - delay: 12h
+        - if:
+            condition:
+              for:
+                time: 12h
+                condition:
+                  switch.is_on: relay1
+            then:
+              - switch.turn_off: relay1
+  - platform: output
+    id: relay2
+    name: ${device_name} Relay 2
+    output: relay_output_2
+    icon: mdi:electric-switch
+    restore_mode: RESTORE_DEFAULT_OFF
+    on_turn_on:
+      - then:
+        - delay: 12h
+        - if:
+            condition:
+              for:
+                time: 12h
+                condition:
+                  switch.is_on: relay2
+            then:
+              - switch.turn_off: relay2
+
+binary_sensor:
+  # Input 1
+  - id: button1
+    name: ${device_name} Button 1
+    pin: GPIO11
+    platform: gpio
+    filters:
+      - delayed_on_off: 20ms
+    on_press:
+      then:
+        - switch.toggle: relay2
+  # Input 2
+  - id: button2
+    name: ${device_name} Button 2
+    pin: GPIO10
+    platform: gpio
+    filters:
+      - delayed_on_off: 20ms
+    on_multi_click:
+      - timing:
+          - ON for at most 400ms
+          - OFF for at least 10ms
+        then:
+          - if:
+              condition:
+                switch.is_off: relay1
+              then:
+                - homeassistant.service:
+                    service: switch.turn_on
+                    data:
+                      entity_id: switch.kitchen_desk_ledlight_relay
+              else:
+                - homeassistant.service:
+                    service: switch.turn_off
+                    data:
+                      entity_id: switch.kitchen_desk_ledlight_relay
+          - switch.toggle: relay1
+      - timing:
+          - ON for at least 420ms
+        then:
+          - homeassistant.service:
+              service: switch.toggle
+              data:
+                entity_id: switch.kitchen_desk_ledlight_relay
+
+   # RX pin 
+  - id: button3
+    name: ${device_name} Button 3
+    pin:
+      number: GPIO1
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    platform: gpio
+    filters:
+      - delayed_on_off: 20ms
+
+i2c:
+  sda: 6
+  scl: 7
+
+sensor:
+  # Power Sensor
+  - platform: ade7953_i2c
+    irq_pin: GPIO19
+    current_a:
+      id: sensor_current_1
+    active_power_a:
+      id: power_channel_a
+    current_b:
+      id: sensor_current_2
+    active_power_b:
+      id: power_channel_2
+    update_interval: 10s
+  # Internal NTC Temperature sensor
+  - id: temperature
+    platform: ntc
+    sensor: temperature_sensor_resistance
+    name: ${device_name} Temperature
+    unit_of_measurement: °C
+    accuracy_decimals: 1
+    icon: "mdi:thermometer"
+    entity_category: 'diagnostic'
+    calibration:
+      b_constant: 3350
+      reference_resistance: 10kOhm
+      reference_temperature: 25°C
+  # Required for NTC sensor
+  - id: temperature_sensor_resistance
+    platform: resistance
+    sensor: temperature_sensor_voltage
+    configuration: DOWNSTREAM
+    resistor: 10kOhm
+  # Required for NTC sensor
+  - id: temperature_sensor_voltage
+    platform: adc
+    pin: GPIO4
+    attenuation: 11db
+
+status_led:
+  pin:
+    number: GPIO0
+    inverted: true

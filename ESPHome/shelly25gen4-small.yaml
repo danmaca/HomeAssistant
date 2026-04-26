@@ -1,0 +1,28 @@
+substitutions:
+  devicename: shelly25gen4_small
+
+esphome:
+  name: ${devicename}
+
+esp32:
+  variant: esp32c6
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_iot_ssid
+  password: !secret wifi_iot_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  #ap:
+  #  ssid: ${devicename} AP
+  #  password: !secret esphome_fallback_ap_password
+
+#captive_portal:
+
+ota:
+  - platform: esphome
+
+web_server:
+  port: 80

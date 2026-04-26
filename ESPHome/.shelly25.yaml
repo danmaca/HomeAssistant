@@ -1,0 +1,65 @@
+substitutions:
+  power_update_interval: 30s
+  
+esp8266:
+  board: esp01_1m
+  
+# Send WiFi signal strength & uptime to HA
+sensor:
+  - platform: ade7953_i2c
+    irq_pin: GPIO16 # Prevent overheating by setting this
+    update_interval: ${power_update_interval}
+    # On the Shelly 2.5 channels are mixed ch1=B ch2=A
+    active_power_a:
+      name: ${device_name} Relay 2 Power
+      id: power_channel_2
+      filters:
+        - lambda: return abs(x);
+    active_power_b:
+      name: ${device_name} Relay 1 Power
+      id: power_channel_1
+      filters:
+        - lambda: return abs(x);
+  - platform: total_daily_energy
+    name: ${device_name} Relay 1 Energy
+    power_id: power_channel_1
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+    entity_category: 'diagnostic'
+  - platform: total_daily_energy
+    name: ${device_name} Relay 2 Energy
+    power_id: power_channel_2
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+    entity_category: 'diagnostic'
+    
+  # NTC Temperature
+  - platform: ntc
+    sensor: temp_resistance_reading
+    name: ${device_name} Temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    icon: "mdi:thermometer"
+    calibration:
+      b_constant: 3350
+      reference_resistance: 10kOhm
+      reference_temperature: 298.15K
+  - platform: resistance
+    id: temp_resistance_reading
+    sensor: temp_analog_reading
+    configuration: DOWNSTREAM
+    resistor: 32kOhm
+  - platform: adc
+    id: temp_analog_reading
+    pin: A0
+    
+status_led:
+  pin:
+    number: GPIO0
+    inverted: yes
+
+i2c:
+  sda: GPIO12
+  scl: GPIO14

@@ -1,0 +1,31 @@
+substitutions:
+  device_name: "test-wemos"
+  friendly_name: "Test Wemos"
+
+esphome:
+  name: ${device_name}
+  platform: ESP8266
+  board: esp01_1m
+
+wifi:
+  ssid: !secret wifi_iot_ssid
+  password: !secret wifi_iot_password
+  
+  #manual_ip:
+  #  static_ip: 192.168.10.155
+  #  gateway: 192.168.0.1
+  #  subnet: 255.255.255.0
+  
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${friendly_name} AP
+    password: !secret esphome_fallback_ap_password
+    
+web_server:
+  port: 80
+captive_portal:
+# Enable logging
+logger:
+# Enable Home Assistant API
+api:
+ota:

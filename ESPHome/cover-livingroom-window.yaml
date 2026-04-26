@@ -1,0 +1,6 @@
+substitutions:
+  device_name: "cover-livingroom-window"
+  friendly_name: "Cover livingroom window"
+
+packages:
+  base_cover_shelly25_long: !include .base.cover.shelly25.long.yaml

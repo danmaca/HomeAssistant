@@ -1,0 +1,23 @@
+substitutions:
+  devicename: shelly1_small
+
+esphome:
+  name: ${devicename}
+  platform: ESP8266
+  board: esp01_1m
+
+wifi:
+  ssid: !secret wifi_iot_ssid
+  password: !secret wifi_iot_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${devicename} AP
+    password: !secret esphome_fallback_ap_password
+
+captive_portal:
+
+ota:
+
+web_server:
+  port: 80

@@ -1,0 +1,6 @@
+substitutions:
+  device_name: "cover-bedroom"
+  friendly_name: "Cover bedroom"
+
+packages:
+  base_cover_shelly25_short: !include .base.cover.shelly25.short.yaml

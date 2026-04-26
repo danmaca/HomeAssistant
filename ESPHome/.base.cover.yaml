@@ -1,0 +1,223 @@
+packages:
+  base: !include .base.yaml
+  
+substitutions:
+  tilt_duration: 905ms
+  motor_warmup_delay: 20ms
+  #gpio_buttonKeyUp:
+  #gpio_buttonKeyDown:
+  #gpio_relayUp:
+  #gpio_relayDown:
+  
+external_components:
+  - source:
+      type: local
+      path: /config/esphome/Venetian-Blinds/components
+    components: [venetian_blinds]
+    
+cover:
+  - id: shutter
+    name: ${device_name} Shutter
+    platform: venetian_blinds
+    open_duration: ${open_duration}
+    close_duration: ${close_duration}
+    tilt_duration: ${tilt_duration}
+    motor_warmup_delay: ${motor_warmup_delay}
+    open_action:
+      - switch.turn_on: relayUp
+      - text_sensor.template.publish:
+          id: shutterMovement
+          state: !lambda 'return "opening";'
+    close_action:
+      - switch.turn_on: relayDown
+      - text_sensor.template.publish:
+          id: shutterMovement
+          state: !lambda 'return "closing";'
+    stop_action:
+      - switch.turn_off: relayUp
+      - switch.turn_off: relayDown
+      - text_sensor.template.publish:
+          id: shutterMovement
+          state: !lambda 'return "idle";'
+          
+  - id: manualControl
+    name: ${device_name} Manual Control
+    platform: template
+    open_action:
+      - switch.turn_on: relayUp
+    close_action:
+      - switch.turn_on: relayDown
+    stop_action:
+      - switch.turn_off: relayUp
+      - switch.turn_off: relayDown
+
+api:
+  services:
+    - service: process_button
+      variables:
+        buttonType: string
+        pressMode: string
+      then:
+        - lambda: |-
+            id(shutter).ProcessButton(buttonType, pressMode);
+  
+binary_sensor:
+  - id: buttonKeyUp
+    pin: ${gpio_buttonKeyUp}
+    platform: gpio
+    internal: true
+    filters:
+      - delayed_on: 30ms
+      - delayed_off: 30ms
+    on_multi_click:
+      - timing:
+          - ON for at most 400ms
+          - OFF for at most 500ms
+          - ON for at most 400ms
+          - OFF for at least 100ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("up", "double");
+          #- text_sensor.template.publish:
+          #    id: buttonUp
+          #    state: !lambda 'return "double";'
+      - timing:
+          - ON for 40ms to 400ms
+          - OFF for at least 500ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("up", "single");
+          #- text_sensor.template.publish:
+          #    id: buttonUp
+          #    state: !lambda 'return "single";'
+      - timing:
+          - ON for at least 600ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("up", "hold");
+          #- text_sensor.template.publish:
+          #    id: buttonUp
+          #    state: !lambda 'return "hold";'
+      - timing:
+          - ON for at least 600ms
+          - OFF for at least 100ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("up", "release");
+          #- text_sensor.template.publish:
+          #    id: buttonUp
+          #    state: !lambda 'return "release";'
+
+  - id: buttonKeyDown
+    pin: ${gpio_buttonKeyDown}
+    platform: gpio
+    internal: true
+    filters:
+      - delayed_on: 30ms
+      - delayed_off: 30ms
+    on_multi_click:
+      - timing:
+          - ON for at most 400ms
+          - OFF for at most 500ms
+          - ON for at most 400ms
+          - OFF for at least 100ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("down", "double");
+          #- text_sensor.template.publish:
+          #    id: buttonDown
+          #    state: !lambda 'return "double";'
+      - timing:
+          - ON for 40ms to 400ms
+          - OFF for at least 500ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("down", "single");
+          #- text_sensor.template.publish:
+          #    id: buttonDown
+          #    state: !lambda 'return "single";'
+      - timing:
+          - ON for at least 600ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("down", "hold");
+          #- text_sensor.template.publish:
+          #    id: buttonDown
+          #    state: !lambda 'return "hold";'
+      - timing:
+          - ON for at least 600ms
+          - OFF for at least 100ms
+        then:
+          - lambda: |-
+              id(shutter).ProcessButton("down", "release");
+          #- text_sensor.template.publish:
+          #    id: buttonDown
+          #    state: !lambda 'return "release";'
+
+switch:
+  - id: relayUp
+    platform: gpio
+    pin: ${gpio_relayUp}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_OFF
+    interlock: [relayDown]
+  - id: relayDown
+    platform: gpio
+    pin: ${gpio_relayDown}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_OFF
+    interlock: [relayUp]
+        
+# Send IP Address to HA
+text_sensor:
+  #- id: buttonUp
+  #  name: ${device_name} Button Up
+  #  platform: template
+  #  icon: 'mdi:toggle-switch'
+  #  on_value: # When a state is set
+  #    then:
+  #      - if:
+  #          condition:
+  #            text_sensor.state:
+  #              id: buttonUp
+  #              state: ''
+  #          else: # If non-empty
+  #            - delay: 20ms
+  #            - text_sensor.template.publish:
+  #                id: buttonUp
+  #                state: !lambda 'return "";' # Reset to empty
+
+  #- id: buttonDown
+  #  name: ${device_name} Button Down
+  #  platform: template
+  #  icon: 'mdi:toggle-switch'
+  #  on_value: # When a state is set
+  #    then:
+  #      - if:
+  #          condition:
+  #            text_sensor.state:
+  #              id: buttonDown
+  #              state: ''
+  #          else: # If non-empty
+  #            - delay: 20ms
+  #            - text_sensor.template.publish:
+  #                id: buttonDown
+  #                state: !lambda 'return "";' # Reset to empty
+
+  - id: shutterMovement
+    name: ${device_name} Movement
+    platform: template
+    #lambda: return {"idle"};
+    
+button:
+  - name: ${device_name} Calibrate
+    platform: template
+    on_press:
+      - lambda: |-
+          id(shutter).StartCalibration();
+          
+#  - name: ${device_name} Activate UP Down
+#    platform: template
+#    on_press:
+#      - switch.turn_on: relayUp
+#      - switch.turn_on: relayDown

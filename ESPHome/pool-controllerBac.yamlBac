@@ -1,0 +1,42 @@
+substitutions:
+  device_name: "pool-controller"
+  friendly_name: "Pool controller"
+
+packages:
+  base: !include .base.yaml
+
+esphome:
+  name: ${device_name}
+esp8266:
+  board: esp01_1m
+  
+#wifi:  
+#  manual_ip:
+#    static_ip: 192.168.10.189
+#    gateway: 192.168.10.1
+#    subnet: 255.255.255.0
+
+one_wire:
+  - platform: gpio
+    pin: GPIO4
+    
+# Send IP Address to HA
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: ${friendly_name} IP Address
+      update_interval: 60s
+
+# Send WiFi signal strength & uptime to HA
+sensor:
+  - platform: dallas_temp
+    name: ${friendly_name} Temp Technology
+    address: 0xf9f848811e64ff28
+    accuracy_decimals: 4
+    update_interval: 60s
+
+  - platform: dallas_temp
+    name: ${friendly_name} Temp Outside
+    address: 0x59c15f811e64ff28
+    accuracy_decimals: 4
+    update_interval: 60s
